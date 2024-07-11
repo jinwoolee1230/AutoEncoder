@@ -1,14 +1,12 @@
-import VAE
 import os
 import torch
 import torch.nn as nn
-import torch
 import torchvision.transforms as transforms
 from torch.utils.data import Dataset, DataLoader
 import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image
-import torch.nn.functional as F
+import VAE
 
 class CustomDataset(Dataset):
     def __init__(self, data_dir, transform=None):
@@ -28,11 +26,11 @@ class CustomDataset(Dataset):
         
         return image
 
-train_data_path= "/Users/jinwoolee/Projects/AutoEncoders/dataset/train_processed/"
-validation_data_path= "/Users/jinwoolee/Projects/AutoEncoders/dataset/validation_processed/"
+train_data_path= "/home/asl/projects/AutoEncoder/dataset/train_processed/"
+validation_data_path= "/home/asl/projects/AutoEncoder/dataset/validation_processed/"
 
-model= VAE.VAE()
-criterion= VAE.VAELoss()
+model = VAE.VAE()
+criterion = VAE.VAELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
 data_transforms = transforms.Compose([
@@ -49,15 +47,19 @@ validation_loader = DataLoader(validation_dataset, batch_size=128, shuffle=False
 num_epochs = 100
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
+# 모델과 손실 함수를 GPU로 이동
+model.to(device)
+criterion.to(device)
+
 for epoch in range(num_epochs):
+    model.train()
     running_loss = 0.0
     for i, data in enumerate(train_loader, 0):
-        images = data
-        images = images.to(device)
+        images = data.to(device)
 
         optimizer.zero_grad()
         recon_images, mu, logvar = model(images)  # VAE 모델의 출력 처리
-        loss = criterion(recon_images,images, mu, logvar)
+        loss = criterion(recon_images, images, mu, logvar)
         loss.backward()
         optimizer.step()
         
@@ -72,10 +74,11 @@ for epoch in range(num_epochs):
         for images in validation_loader:
             images = images.to(device)
             recon_images, mu, logvar = model(images)
-            val_loss += criterion(recon_images, images, mu, logvar)
+            val_loss += criterion(recon_images, images, mu, logvar).item()
         
         val_loss /= len(validation_loader)
         print(f'Validation Loss: {val_loss:.4f}')
-    model.train()  # Set model back to training mode
 
     torch.save(model.state_dict(), 'autoencoder.pth')
+
+print("Training complete.")
