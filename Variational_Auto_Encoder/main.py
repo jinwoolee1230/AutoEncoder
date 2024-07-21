@@ -26,15 +26,15 @@ class CustomDataset(Dataset):
         
         return image
 
-train_data_path= "/Users/jinwoolee/Projects/AutoEncoder/dataset/train_processed/"
-validation_data_path= "/Users/jinwoolee/Projects/AutoEncoder/dataset/validation_processed/"
+train_data_path= "/home/asl/projects/AutoEncoder/dataset/train_processed/"
+validation_data_path= "/home/asl/projects/AutoEncoder/dataset/validation_processed/"
 
 model = VAE.VAE()
 criterion = VAE.VAELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
 data_transforms = transforms.Compose([
-    transforms.Resize((128,128)),
+    transforms.Resize((400,400)),
     transforms.ToTensor()
 ])
 

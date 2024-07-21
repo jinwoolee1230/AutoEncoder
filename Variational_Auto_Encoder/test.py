@@ -12,9 +12,6 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 # 모델 로드 및 GPU로 이동
 model = VAE.VAE()
-model.load_state_dict(torch.load('autoencoder.pth'))
-model.to(device)
-model.eval()
 
 class CustomDataset(Dataset):
     def __init__(self, data_dir, transform=None):
@@ -34,9 +31,9 @@ class CustomDataset(Dataset):
         
         return image
 
-validation_data_path= "/Users/jinwoolee/Projects/AutoEncoder/dataset/validation_processed/"
+validation_data_path= "/home/asl/projects/AutoEncoder/dataset/validation_processed/"
 data_transforms = transforms.Compose([
-    transforms.Resize((128, 128)),
+    transforms.Resize((400, 400)),
     transforms.ToTensor()
 ])
 
@@ -46,6 +43,9 @@ validation_loader = DataLoader(validation_dataset, batch_size=1, shuffle=False)
 # 이미지 재구성 결과 시각화
 with torch.no_grad():
     for images in validation_loader:
+        model.load_state_dict(torch.load('autoencoder.pth'))
+        model.to(device)
+        model.eval()
         images = images.to(device)
         outputs, mus, logvars = model(images)
         
