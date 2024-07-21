@@ -34,7 +34,7 @@ class CustomDataset(Dataset):
         
         return image
 
-validation_data_path= "/home/asl/projects/AutoEncoder/dataset/validation_processed/"
+validation_data_path= "/Users/jinwoolee/Projects/AutoEncoder/dataset/validation_processed/"
 data_transforms = transforms.Compose([
     transforms.Resize((128, 128)),
     transforms.ToTensor()

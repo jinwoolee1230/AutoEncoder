@@ -3,19 +3,18 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class VAELoss(nn.Module):
+    # for example maxpooling.. overall mu and sigma of each feature should be comsidered.
     def __init__(self, kl_weight=1.0):
         super(VAELoss, self).__init__()
         self.kl_weight = kl_weight
     
     def forward(self, recon_x, x, mu, logvar):
         # 재구성 손실 계산
-        criterion = nn.MSELoss(reduction='sum')
+        criterion = nn.MSELoss(reduction='mean')  # 평균 손실로 변경
         MSE = criterion(recon_x, x)
-        MSE /= x.size(0)  # 배치 크기로 정규화
         
         # KL 발산 손실 계산
-        KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
-        KLD /= x.size(0)  # 배치 크기로 정규화
+        KLD = -0.5 * torch.mean(1 + logvar - mu.pow(2) - logvar.exp())
         
         return MSE + self.kl_weight * KLD
 
@@ -25,23 +24,33 @@ class VAE(nn.Module):
         
         # 인코더 정의
         self.encoder = nn.Sequential(
-            nn.Conv2d(3, 16, kernel_size=3, stride=2, padding=1),
+            nn.Conv2d(3, 8, kernel_size=3, stride=2, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(8, 16, kernel_size=3, stride=2, padding=1),
             nn.ReLU(),
             nn.Conv2d(16, 32, kernel_size=3, stride=2, padding=1),
-            nn.ReLU(),
-            nn.Conv2d(32, 64, kernel_size=3, stride=2, padding=1),
-            nn.ReLU(),
+            nn.ReLU()
         )
-        self.conv_mu = nn.Conv2d(64, 64, kernel_size=1)
-        self.conv_logvar = nn.Conv2d(64, 64, kernel_size=1)
+        self.conv_mu = nn.Sequential(
+            nn.Conv2d(32, 64, kernel_size=3, stride=2),
+            nn.ReLU(),
+            nn.Conv2d(32, 32, kernel_size=3, stride=2),
+            nn.ReLU()
+        )
+        self.conv_logvar = nn.Sequential(
+            nn.Conv2d(32, 32, kernel_size=3, stride=2),
+            nn.ReLU(),
+            nn.Conv2d(32, 32, kernel_size=3, stride=2),
+            nn.ReLU()
+        )
 
         # 디코더 정의
         self.decoder = nn.Sequential(
-            nn.ConvTranspose2d(64, 32, kernel_size=3, stride=2, padding=1, output_padding=1),
-            nn.ReLU(),
             nn.ConvTranspose2d(32, 16, kernel_size=3, stride=2, padding=1, output_padding=1),
             nn.ReLU(),
-            nn.ConvTranspose2d(16, 3, kernel_size=3, stride=2, padding=1, output_padding=1),
+            nn.ConvTranspose2d(16, 8, kernel_size=3, stride=2, padding=1, output_padding=1),
+            nn.ReLU(),
+            nn.ConvTranspose2d(8, 3, kernel_size=3, stride=2, padding=1, output_padding=1),
             nn.Sigmoid()  # 이미지 픽셀 값 범위를 [0, 1]로 제한하기 위해 시그모이드 함수 사용
         )
     
